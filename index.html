@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Document Verification</title>
   <style>
+    /* [Your existing CSS styles here] */
     body {
       font-family: Arial, sans-serif;
       text-align: center;
@@ -49,6 +50,7 @@
   </style>
 </head>
 <body>
+  <!-- Initial Image -->
   <h2>Document Verification</h2>
 
   <!-- Input Section -->
@@ -56,10 +58,10 @@
     <input type="text" id="doc-number" placeholder="Enter Document Number">
     <button onclick="validateDocument()">Validate</button>
   </div>
-  <!-- Initial Image -->
   <div id="initial-image">
     <img src="https://i.imgur.com/PQXAJeh.png" alt="Initial Image" />
   </div>
+
   <!-- Green Check Image (Hidden Initially) -->
   <div id="green-check-image" style="display:none;">
     <img src="https://i.imgur.com/QxQGCHZ.png" alt="Green Check" style="width:50px;height:50px;" />
@@ -71,29 +73,8 @@
   <!-- Back Button (Hidden Initially) -->
   <button class="back-button" style="display:none;" onclick="goBack()">Back</button>
 
-  <!-- Include Papa Parse for CSV parsing -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
-
   <script>
-    // URL of your published Google Sheet in CSV format
-    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSlC75c_dNJwF-dBofo87wNJzB6ApRePjF5SePcFBjea5iN8-BNNFNZZxophLsDgp-VNFZwtGpaF2mQ/pub'; // Replace with your CSV URL
-
-    let sheetData = [];
-
-    // Fetch the CSV data when the page loads
-    window.onload = function() {
-      fetch(csvUrl)
-        .then(response => response.text())
-        .then(data => {
-          // Parse CSV data
-          const parsedData = Papa.parse(data, { header: true });
-          sheetData = parsedData.data;
-        })
-        .catch(error => {
-          console.error('Error fetching CSV data:', error);
-          alert('Failed to load data. Please try again later.');
-        });
-    };
+    const apiUrl = 'https://your-server.com/server.php'; // Replace with your server.php URL
 
     function validateDocument() {
       const docNumber = document.getElementById('doc-number').value.trim();
@@ -105,25 +86,31 @@
       // Hide the initial image
       document.getElementById('initial-image').style.display = 'none';
 
-      // Perform the search
-      const result = checkDocumentNumber(docNumber);
+      // Disable input and button to prevent multiple submissions
+      document.getElementById('doc-number').disabled = true;
+      document.querySelector('#input-section button').disabled = true;
 
-      displayResult(result);
-    }
+      // Show loading indicator (optional)
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = 'Loading...';
 
-    function checkDocumentNumber(docNumber) {
-      for (let i = 0; i < sheetData.length; i++) {
-        const sheetDocNumber = sheetData[i]['Document Number'].trim();
-        if (sheetDocNumber === docNumber) {
-          return {
-            found: true,
-            description: sheetData[i]['Description']
-          };
-        }
-      }
-      return {
-        found: false
-      };
+      // Make an AJAX POST request to server.php
+      fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ docNumber: docNumber })
+      })
+      .then(response => response.json())
+      .then(data => {
+        displayResult(data);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while processing your request.');
+        goBack(); // Reset the form
+      });
     }
 
     function displayResult(result) {
@@ -162,6 +149,8 @@
     function goBack() {
       // Reset input
       document.getElementById('doc-number').value = '';
+      document.getElementById('doc-number').disabled = false;
+      document.querySelector('#input-section button').disabled = false;
 
       // Hide result and back button
       document.getElementById('result').innerHTML = '';
