@@ -74,18 +74,11 @@
   <!-- Back Button (Hidden Initially) -->
   <button class="back-button" style="display:none;">Back</button>
 
+  <!-- Place your script here -->
   <script>
     const apiUrl = 'https://tantra-ph.com/PNPKI.php'; // Your server.php URL
 
-    // Ensure the DOM is fully loaded before adding event listeners
-    document.addEventListener('DOMContentLoaded', function() {
-      // Add event listener to the Validate button
-      document.getElementById('validate-button').addEventListener('click', validateDocument);
-
-      // Add event listener to the Back button
-      document.querySelector('.back-button').addEventListener('click', goBack);
-    });
-
+    // Define functions in the global scope
     function validateDocument() {
       const docNumberElement = document.getElementById('doc-number');
       const docNumber = docNumberElement.value.trim();
@@ -182,6 +175,12 @@
       // Hide the green check image
       document.getElementById('green-check-image').style.display = 'none';
     }
+
+    // Add event listeners after the functions are defined
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('validate-button').addEventListener('click', validateDocument);
+      document.querySelector('.back-button').addEventListener('click', goBack);
+    });
   </script>
 </body>
 </html>
