@@ -60,7 +60,7 @@
   <!-- Input Section -->
   <div id="input-section">
     <input type="text" id="doc-number" placeholder="Enter Document Number">
-    <button onclick="validateDocument()">Validate</button>
+    <button id="validate-button">Validate</button>
   </div>
 
   <!-- Green Check Image (Hidden Initially) -->
@@ -72,13 +72,23 @@
   <div id="result"></div>
 
   <!-- Back Button (Hidden Initially) -->
-  <button class="back-button" style="display:none;" onclick="goBack()">Back</button>
+  <button class="back-button" style="display:none;">Back</button>
 
   <script>
     const apiUrl = 'https://tantra-ph.com/PNPKI.php'; // Your server.php URL
 
+    // Ensure the DOM is fully loaded before adding event listeners
+    document.addEventListener('DOMContentLoaded', function() {
+      // Add event listener to the Validate button
+      document.getElementById('validate-button').addEventListener('click', validateDocument);
+
+      // Add event listener to the Back button
+      document.querySelector('.back-button').addEventListener('click', goBack);
+    });
+
     function validateDocument() {
-      const docNumber = document.getElementById('doc-number').value.trim();
+      const docNumberElement = document.getElementById('doc-number');
+      const docNumber = docNumberElement.value.trim();
       if (docNumber === '') {
         alert('Please enter a Document Number.');
         return;
@@ -88,8 +98,8 @@
       document.getElementById('initial-image').style.display = 'none';
 
       // Disable input and button to prevent multiple submissions
-      document.getElementById('doc-number').disabled = true;
-      document.querySelector('#input-section button').disabled = true;
+      docNumberElement.disabled = true;
+      document.getElementById('validate-button').disabled = true;
 
       // Show loading indicator (optional)
       const resultDiv = document.getElementById('result');
@@ -101,3 +111,77 @@
         headers: {
           'Content-Type': 'application/json'
         },
+        body: JSON.stringify({ docNumber: docNumber })
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        return response.json();
+      })
+      .then(data => {
+        displayResult(data);
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while processing your request.');
+        goBack(); // Reset the form
+      });
+    }
+
+    function displayResult(result) {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = ''; // Clear previous results
+
+      if (result.found) {
+        // Show the green check image
+        document.getElementById('green-check-image').style.display = 'block';
+
+        // Display "Verified!" message
+        const verifiedDiv = document.createElement('div');
+        verifiedDiv.className = 'verified';
+        verifiedDiv.innerHTML = 'Verified!';
+        resultDiv.appendChild(verifiedDiv);
+
+        // Display the document description
+        const descriptionDiv = document.createElement('div');
+        descriptionDiv.id = 'description';
+        descriptionDiv.textContent = result.description;
+        resultDiv.appendChild(descriptionDiv);
+      } else {
+        // Display "Document Not Found!" message
+        const notFoundDiv = document.createElement('div');
+        notFoundDiv.className = 'not-found';
+        notFoundDiv.textContent = 'Document Not Found!';
+        resultDiv.appendChild(notFoundDiv);
+      }
+
+      // Show back button
+      document.querySelector('.back-button').style.display = 'inline-block';
+      // Hide input section
+      document.getElementById('input-section').style.display = 'none';
+    }
+
+    function goBack() {
+      // Reset input
+      const docNumberElement = document.getElementById('doc-number');
+      docNumberElement.value = '';
+      docNumberElement.disabled = false;
+      document.getElementById('validate-button').disabled = false;
+
+      // Hide result and back button
+      document.getElementById('result').innerHTML = '';
+      document.querySelector('.back-button').style.display = 'none';
+
+      // Show input section
+      document.getElementById('input-section').style.display = 'block';
+
+      // Show initial image
+      document.getElementById('initial-image').style.display = 'block';
+
+      // Hide the green check image
+      document.getElementById('green-check-image').style.display = 'none';
+    }
+  </script>
+</body>
+</html>
