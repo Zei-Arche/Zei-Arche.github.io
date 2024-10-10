@@ -1,71 +1,183 @@
-<!-- index.html -->
-
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <title>PNPKI SIGNED DOCUMENT VERIFICATION LIST</title>
+  <title>Document Verification</title>
   <style>
-    table {
-      width: 100%;
-      border-collapse: collapse;
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 20px;
     }
-    th, td {
-      padding: 8px 12px;
-      border: 1px solid #ddd;
+    #initial-image {
+      margin-bottom: 20px;
     }
-    th {
-      background-color: #f4f4f4;
+    #input-section {
+      margin-bottom: 20px;
+    }
+    #result {
+      margin-top: 20px;
+    }
+    .verified {
+      color: green;
+      font-weight: bold;
+      font-size: 24px;
+    }
+    .not-found {
+      color: red;
+      font-weight: bold;
+      font-size: 24px;
+    }
+    .back-button {
+      margin-top: 20px;
+    }
+    #green-check-image {
+      margin-top: 20px;
+      margin-bottom: 20px;
+    }
+    #description {
+      margin-top: 10px;
+      font-size: 18px;
+    }
+    input[type="text"] {
+      padding: 8px;
+      width: 200px;
+    }
+    button {
+      padding: 8px 16px;
     }
   </style>
 </head>
 <body>
-  <h2>PNPKI Signed Document Verification Logs</h2>
-  <table id="data-table"></table>
+  <!-- Initial Image -->
+  <div id="initial-image">
+    <img src="https://i.imgur.com/PQXAJeh.png" alt="Initial Image" />
+  </div>
 
-  <script>
-    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vSlC75c_dNJwF-dBofo87wNJzB6ApRePjF5SePcFBjea5iN8-BNNFNZZxophLsDgp-VNFZwtGpaF2mQ/pub?gid=0&single=true&output=csv'; // Replace with your CSV URL
+  <h2>Document Verification</h2>
 
-    fetch(csvUrl)
-      .then(response => response.text())
-      .then(data => {
-        const parsedData = Papa.parse(data, { header: true });
-        buildTable(parsedData.data);
-      })
-      .catch(error => console.error('Error fetching CSV:', error));
+  <!-- Input Section -->
+  <div id="input-section">
+    <input type="text" id="doc-number" placeholder="Enter Document Number">
+    <button onclick="validateDocument()">Validate</button>
+  </div>
 
-    function buildTable(data) {
-      const table = document.getElementById('data-table');
-      if (data.length === 0) return;
+  <!-- Green Check Image (Hidden Initially) -->
+  <div id="green-check-image" style="display:none;">
+    <img src="https://i.imgur.com/QxQGCHZ.png" alt="Green Check" style="width:50px;height:50px;" />
+  </div>
 
-      // Create table headers
-      const headers = Object.keys(data[0]);
-      const thead = document.createElement('thead');
-      const headerRow = document.createElement('tr');
-      headers.forEach(header => {
-        const th = document.createElement('th');
-        th.textContent = header;
-        headerRow.appendChild(th);
-      });
-      thead.appendChild(headerRow);
-      table.appendChild(thead);
+  <!-- Result Section -->
+  <div id="result"></div>
 
-      // Create table body
-      const tbody = document.createElement('tbody');
-      data.forEach(row => {
-        const tr = document.createElement('tr');
-        headers.forEach(header => {
-          const td = document.createElement('td');
-          td.textContent = row[header];
-          tr.appendChild(td);
-        });
-        tbody.appendChild(tr);
-      });
-      table.appendChild(tbody);
-    }
-  </script>
+  <!-- Back Button (Hidden Initially) -->
+  <button class="back-button" style="display:none;" onclick="goBack()">Back</button>
 
   <!-- Include Papa Parse for CSV parsing -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
+  <script>
+    // URL of your published Google Sheet in CSV format
+    const csvUrl = 'YOUR_CSV_URL_HERE'; // Replace with your CSV URL
+
+    let sheetData = [];
+
+    // Fetch the CSV data when the page loads
+    window.onload = function() {
+      fetch(csvUrl)
+        .then(response => response.text())
+        .then(data => {
+          // Parse CSV data
+          const parsedData = Papa.parse(data, { header: true });
+          sheetData = parsedData.data;
+        })
+        .catch(error => {
+          console.error('Error fetching CSV data:', error);
+          alert('Failed to load data. Please try again later.');
+        });
+    };
+
+    function validateDocument() {
+      const docNumber = document.getElementById('doc-number').value.trim();
+      if (docNumber === '') {
+        alert('Please enter a Document Number.');
+        return;
+      }
+
+      // Hide the initial image
+      document.getElementById('initial-image').style.display = 'none';
+
+      // Perform the search
+      const result = checkDocumentNumber(docNumber);
+
+      displayResult(result);
+    }
+
+    function checkDocumentNumber(docNumber) {
+      for (let i = 0; i < sheetData.length; i++) {
+        const sheetDocNumber = sheetData[i]['Document Number'].trim();
+        if (sheetDocNumber === docNumber) {
+          return {
+            found: true,
+            description: sheetData[i]['Description']
+          };
+        }
+      }
+      return {
+        found: false
+      };
+    }
+
+    function displayResult(result) {
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = ''; // Clear previous results
+
+      if (result.found) {
+        // Show the green check image
+        document.getElementById('green-check-image').style.display = 'block';
+
+        // Display "Verified!" message
+        const verifiedDiv = document.createElement('div');
+        verifiedDiv.className = 'verified';
+        verifiedDiv.innerHTML = 'Verified!';
+        resultDiv.appendChild(verifiedDiv);
+
+        // Display the document description
+        const descriptionDiv = document.createElement('div');
+        descriptionDiv.id = 'description';
+        descriptionDiv.textContent = result.description;
+        resultDiv.appendChild(descriptionDiv);
+      } else {
+        // Display "Document Not Found!" message
+        const notFoundDiv = document.createElement('div');
+        notFoundDiv.className = 'not-found';
+        notFoundDiv.textContent = 'Document Not Found!';
+        resultDiv.appendChild(notFoundDiv);
+      }
+
+      // Show back button
+      document.querySelector('.back-button').style.display = 'inline-block';
+      // Hide input section
+      document.getElementById('input-section').style.display = 'none';
+    }
+
+    function goBack() {
+      // Reset input
+      document.getElementById('doc-number').value = '';
+
+      // Hide result and back button
+      document.getElementById('result').innerHTML = '';
+      document.querySelector('.back-button').style.display = 'none';
+
+      // Show input section
+      document.getElementById('input-section').style.display = 'block';
+
+      // Show initial image
+      document.getElementById('initial-image').style.display = 'block';
+
+      // Hide the green check image
+      document.getElementById('green-check-image').style.display = 'none';
+    }
+  </script>
 </body>
 </html>
